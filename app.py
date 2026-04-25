@@ -22,8 +22,8 @@ PING_WORKERS = int(os.environ.get("PING_WORKERS", "32"))      # parallel pings
 PORT = int(os.environ.get("PORT", "8080"))
 HOST = os.environ.get("HOST", "0.0.0.0")
 
-_here = Path(__file__).parent
-app = Flask(__name__, template_folder=str(_here), static_folder=str(_here), static_url_path="/static")
+app = Flask(__name__)
+
 
 # shared state
 _state_lock = threading.Lock()
