@@ -73,16 +73,22 @@ sudo systemctl enable --now synthping
 
 ## Audio
 
-A small lofi/synthwave player sits in the bottom-right corner. Five Kevin MacLeod tracks (CC BY 4.0, from incompetech.com) ship in `static/audio/` and play on a shuffled loop. Browsers block autoplay, so the first play is always a user click. Volume defaults to ~30% and is remembered across reloads. The `×` button collapses the player to a `♪` icon; click that to bring it back.
+A small lofi/synthwave player sits in the bottom-right corner. Nine Kevin MacLeod tracks (CC BY 4.0, from incompetech.com) ship in `static/audio/` and play on a shuffled loop. The featured track (*Local Forecast - Elevator*, marked `featured: true` in `static/player.js`) is queued first on a fresh load. Volume defaults to ~30% and is remembered across reloads. The `×` button collapses the player to a `♪` icon; click that to bring it back.
 
-To swap or extend tracks: drop new mp3s into `static/audio/` and edit the `PLAYLIST` array at the top of `static/player.js`. Anything you add must be legally redistributable — keep `ATTRIBUTION.md` updated.
+**Autoplay:** in a normal browser the first play must be a user click — Chrome/Firefox/Safari all block autoplay-with-sound. The player attempts `audio.play()` on load anyway, so on a kiosk Pi launched with `--autoplay-policy=no-user-gesture-required` (see below), the featured track starts on its own.
+
+To swap or extend tracks: drop new mp3s into `static/audio/` and edit the `PLAYLIST` array at the top of `static/player.js`. Move the `featured: true` flag to whichever track you want to autoplay. Anything you add must be legally redistributable — keep `ATTRIBUTION.md` updated.
 
 ## Kiosk mode on the Pi (optional)
 
 If the Pi is the display itself, autostart Chromium in kiosk mode:
 
 ```bash
-chromium-browser --kiosk --noerrdefaults --disable-infobars http://localhost:8080
+chromium-browser --kiosk --noerrdefaults --disable-infobars \
+  --autoplay-policy=no-user-gesture-required \
+  http://localhost:8080
 ```
+
+The `--autoplay-policy` flag is what lets the audio player auto-start the featured track without a click.
 
 Good luck with the migration. 🌴🌅
