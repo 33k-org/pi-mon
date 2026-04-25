@@ -70,6 +70,12 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now synthping
 ```
 
+## Audio
+
+A small lofi/synthwave player sits in the bottom-right corner. Five Kevin MacLeod tracks (CC BY 4.0, from incompetech.com) ship in `static/audio/` and play on a shuffled loop. Browsers block autoplay, so the first play is always a user click. Volume defaults to ~30% and is remembered across reloads. The `×` button collapses the player to a `♪` icon; click that to bring it back.
+
+To swap or extend tracks: drop new mp3s into `static/audio/` and edit the `PLAYLIST` array at the top of `static/player.js`. Anything you add must be legally redistributable — keep `ATTRIBUTION.md` updated.
+
 ## Kiosk mode on the Pi (optional)
 
 If the Pi is the display itself, autostart Chromium in kiosk mode:
