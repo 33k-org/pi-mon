@@ -35,7 +35,8 @@ Open `http://<pi-ip>:8080` from any browser. Press F11 for fullscreen on the wal
 |---|---|---|
 | `HOSTS_FILE` | `hosts.txt` | Path to the host list |
 | `PING_INTERVAL` | `5` | Seconds between full sweeps |
-| `PING_TIMEOUT` | `2` | Per-ping timeout in seconds |
+| `PING_TIMEOUT` | `2` | Per-packet timeout in seconds |
+| `PING_COUNT` | `2` | Packets per host. Any reply marks the host up — set higher on flaky links (VPNs, lossy WANs) to reduce false-red flapping. |
 | `PING_WORKERS` | `32` | Parallel ping workers |
 | `PORT` | `8080` | HTTP port |
 | `HOST` | `0.0.0.0` | Bind address |
