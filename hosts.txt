@@ -1,0 +1,22 @@
+# SynthPing hosts list
+# Format: hostname,ipaddress
+# Lines starting with # are ignored, blank lines are fine.
+# You can edit this file while the app is running - it picks up changes.
+
+core-router-01,10.0.0.1
+core-router-02,10.0.0.2
+firewall-a,10.0.0.10
+firewall-b,10.0.0.11
+esxi-host-01,10.0.1.21
+esxi-host-02,10.0.1.22
+esxi-host-03,10.0.1.23
+db-primary,10.0.2.10
+db-replica,10.0.2.11
+web-01,10.0.3.10
+web-02,10.0.3.11
+mail-relay,10.0.4.5
+backup-target,10.0.5.20
+
+# external sanity-checks (these should stay up the whole time)
+google-dns,8.8.8.8
+cloudflare-dns,1.1.1.1

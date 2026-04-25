@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SYNTHPING // datacenter migration monitor</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=VT323&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #0a0014;
+      color: #f0f;
+      font-family: 'Orbitron', sans-serif;
+      overflow: hidden;
+    }
+    #scene { position: fixed; inset: 0; z-index: 0; display: block; }
+
+    #overlay {
+      position: fixed; inset: 0; z-index: 10;
+      display: flex; flex-direction: column;
+      padding: 24px;
+      pointer-events: none;
+    }
+
+    header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 18px;
+      text-shadow: 0 0 8px #f0f, 0 0 16px #f0f;
+    }
+    header h1 {
+      font-weight: 900; font-size: 28px; letter-spacing: 4px;
+      color: #fff;
+      text-shadow: 2px 2px 0 #f0f, -2px -2px 0 #0ff, 0 0 20px #f0f;
+    }
+    header .meta { text-align: right; font-family: 'VT323', monospace; font-size: 18px; color: #0ff; }
+
+    .summary {
+      display: flex; gap: 14px; margin-bottom: 18px;
+    }
+    .stat {
+      flex: 1; padding: 12px 16px;
+      background: rgba(20, 0, 40, 0.55);
+      border: 1px solid #f0f;
+      border-radius: 6px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 0 20px rgba(255,0,255,0.4), inset 0 0 20px rgba(255,0,255,0.1);
+    }
+    .stat .label { font-size: 11px; letter-spacing: 3px; color: #0ff; }
+    .stat .value { font-family: 'VT323', monospace; font-size: 42px; line-height: 1; margin-top: 4px; }
+    .stat.up .value    { color: #00ff9f; text-shadow: 0 0 12px #00ff9f; }
+    .stat.down .value  { color: #ff2d6f; text-shadow: 0 0 12px #ff2d6f; }
+    .stat.unk .value   { color: #ffd166; text-shadow: 0 0 12px #ffd166; }
+    .stat.tot .value   { color: #fff;    text-shadow: 0 0 12px #fff; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+      overflow-y: auto;
+      padding-right: 6px;
+      pointer-events: auto;
+      flex: 1;
+    }
+    .grid::-webkit-scrollbar { width: 8px; }
+    .grid::-webkit-scrollbar-thumb { background: #f0f; border-radius: 4px; }
+
+    .card {
+      background: rgba(15, 0, 30, 0.7);
+      border: 1px solid;
+      border-radius: 6px;
+      padding: 12px 14px;
+      backdrop-filter: blur(3px);
+      transition: transform 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover { transform: translateY(-2px); }
+    .card.up   { border-color: #00ff9f; box-shadow: 0 0 14px rgba(0,255,159,0.5), inset 0 0 14px rgba(0,255,159,0.1); }
+    .card.down { border-color: #ff2d6f; box-shadow: 0 0 18px rgba(255,45,111,0.7), inset 0 0 14px rgba(255,45,111,0.15); animation: alarm 1.4s ease-in-out infinite; }
+    .card.unknown { border-color: #ffd166; box-shadow: 0 0 14px rgba(255,209,102,0.5); }
+
+    @keyframes alarm {
+      0%, 100% { box-shadow: 0 0 18px rgba(255,45,111,0.7), inset 0 0 14px rgba(255,45,111,0.15); }
+      50%      { box-shadow: 0 0 30px rgba(255,45,111,1.0), inset 0 0 22px rgba(255,45,111,0.35); }
+    }
+
+    .card .row1 { display: flex; justify-content: space-between; align-items: center; }
+    .card .name { font-weight: 700; font-size: 15px; letter-spacing: 1.5px; color: #fff; }
+    .card .pill {
+      font-family: 'VT323', monospace; font-size: 16px;
+      padding: 2px 10px; border-radius: 12px;
+      background: rgba(0,0,0,0.4);
+    }
+    .card.up .pill   { color: #00ff9f; }
+    .card.down .pill { color: #ff2d6f; }
+    .card.unknown .pill { color: #ffd166; }
+
+    .card .ip { font-family: 'VT323', monospace; font-size: 18px; color: #0ff; margin-top: 4px; }
+    .card .row2 {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 8px;
+      font-family: 'VT323', monospace; font-size: 16px; color: #c89dff;
+    }
+
+    .history { display: flex; gap: 2px; margin-top: 8px; height: 12px; }
+    .history span {
+      flex: 1; border-radius: 1px;
+    }
+    .history span.ok { background: #00ff9f; box-shadow: 0 0 4px #00ff9f; }
+    .history span.bad { background: #ff2d6f; box-shadow: 0 0 4px #ff2d6f; }
+
+    /* CRT scanlines for extra retro */
+    body::after {
+      content: ""; position: fixed; inset: 0; z-index: 20; pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px,
+        rgba(0,0,0,0.12) 3px, rgba(0,0,0,0) 4px);
+      mix-blend-mode: multiply;
+    }
+
+    .empty {
+      grid-column: 1 / -1;
+      text-align: center; padding: 60px 20px;
+      color: #c89dff; font-family: 'VT323', monospace; font-size: 22px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+
+  <div id="overlay">
+    <header>
+      <h1>▶ SYNTHPING ◀</h1>
+      <div class="meta">
+        <div id="clock">--:--:--</div>
+        <div id="last-sweep">awaiting first sweep…</div>
+      </div>
+    </header>
+
+    <div class="summary">
+      <div class="stat tot"><div class="label">TOTAL</div><div class="value" id="s-total">0</div></div>
+      <div class="stat up"><div class="label">ONLINE</div><div class="value" id="s-up">0</div></div>
+      <div class="stat down"><div class="label">OFFLINE</div><div class="value" id="s-down">0</div></div>
+      <div class="stat unk"><div class="label">PENDING</div><div class="value" id="s-unk">0</div></div>
+    </div>
+
+    <div class="grid" id="grid">
+      <div class="empty">scanning the network… stand by</div>
+    </div>
+  </div>
+
+  <script src="/static/scene.js"></script>
+  <script src="/static/status.js"></script>
+</body>
+</html>
