@@ -17,7 +17,8 @@ from flask import Flask, jsonify, render_template
 # ---- config (env-overridable) ----
 HOSTS_FILE = Path(os.environ.get("HOSTS_FILE", "hosts.txt"))
 PING_INTERVAL = int(os.environ.get("PING_INTERVAL", "5"))     # seconds between sweeps
-PING_TIMEOUT = int(os.environ.get("PING_TIMEOUT", "2"))       # seconds per ping
+PING_TIMEOUT = int(os.environ.get("PING_TIMEOUT", "2"))       # seconds per packet
+PING_COUNT = int(os.environ.get("PING_COUNT", "2"))           # packets per host (any reply = up)
 PING_WORKERS = int(os.environ.get("PING_WORKERS", "32"))      # parallel pings
 PORT = int(os.environ.get("PORT", "8080"))
 HOST = os.environ.get("HOST", "0.0.0.0")
@@ -53,17 +54,21 @@ def load_hosts():
     return out
 
 
-def ping_one(ip, timeout=PING_TIMEOUT):
-    """Return (up: bool, latency_ms: float|None). Uses system ping."""
+def ping_one(ip, timeout=PING_TIMEOUT, count=PING_COUNT):
+    """Return (up: bool, latency_ms: float|None). Uses system ping.
+
+    Sends `count` packets; the host is considered up if at least one reply
+    arrives (Linux ping returns 0 when ≥1 packet is received). The reported
+    latency is the first reply's RTT.
+    """
+    deadline = count + timeout      # -w: hard deadline for the whole run
     try:
-        # -c 1: one packet, -W timeout (Linux), -w deadline as fallback
         result = subprocess.run(
-            ["ping", "-c", "1", "-W", str(timeout), ip],
-            capture_output=True, text=True, timeout=timeout + 1,
+            ["ping", "-c", str(count), "-W", str(timeout), "-w", str(deadline), ip],
+            capture_output=True, text=True, timeout=deadline + 1,
         )
         if result.returncode != 0:
             return False, None
-        # parse "time=12.3 ms"
         for token in result.stdout.split():
             if token.startswith("time="):
                 try:
