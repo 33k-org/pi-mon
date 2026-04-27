@@ -22,7 +22,7 @@ pip3 install flask
 ## Run
 
 ```bash
-cd synthping
+cd pi-mon
 # edit hosts.txt with your real hosts
 python3 app.py
 ```
